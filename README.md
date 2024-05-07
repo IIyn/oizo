@@ -1,6 +1,6 @@
 # Oizo
 
-This project is based on a [Learn To Fly](https://pwy.io/posts/learning-to-fly-pt1/) a course to learn genetic algorithms and neural networks.
+This project is based on [Learn To Fly](https://pwy.io/posts/learning-to-fly-pt1/) a course to learn genetic algorithms and neural networks.
 
 ## Presentation
 

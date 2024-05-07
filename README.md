@@ -13,6 +13,8 @@ You will need to have rust installed on your computer. You can install it by fol
 Then, you can clone the repository and run the following command to start the simulation:
 
 ```bash
+ cargo install wasm-pack
+ cargo build
  cd libs/simulation-wasm && wasm-pack build
  cd ../../www && npm install && npm run start
 ```

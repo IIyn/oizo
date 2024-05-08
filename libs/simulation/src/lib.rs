@@ -1,128 +1,170 @@
-use nalgebra as na;
+mod animal;
+mod animal_individual;
+mod brain;
+mod config;
+mod eye;
+mod food;
+mod statistics;
+mod world;
+
+pub use self::animal::*;
+use self::animal_individual::*;
+pub use self::brain::*;
+pub use self::config::*;
+pub use self::eye::*;
+pub use self::food::*;
+pub use self::statistics::*;
+pub use self::world::*;
 use rand::{Rng, RngCore};
+use serde::{Deserialize, Serialize};
+use std::f32::consts::*;
+use {lib_genetic_algorithm as ga, lib_neural_network as nn, nalgebra as na};
 
 pub struct Simulation {
+    config: Config,
     world: World,
+    age: usize,
+    generation: usize,
 }
 
 impl Simulation {
-    pub fn random(rng: &mut dyn RngCore) -> Self {
+    pub fn random(config: Config, rng: &mut dyn RngCore) -> Self {
+        let world = World::random(&config, rng);
+
         Self {
-            world: World::random(rng),
+            config,
+            world,
+            age: 0,
+            generation: 0,
         }
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     pub fn world(&self) -> &World {
         &self.world
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self, rng: &mut dyn RngCore) -> Option<Statistics> {
+        self.process_collisions(rng);
+        self.process_brains();
+        self.process_movements();
+        self.try_evolving(rng)
+    }
+
+    pub fn train(&mut self, rng: &mut dyn RngCore) -> Statistics {
+        loop {
+            if let Some(statistics) = self.step(rng) {
+                return statistics;
+            }
+        }
+    }
+}
+
+impl Simulation {
+    fn process_collisions(&mut self, rng: &mut dyn RngCore) {
         for animal in &mut self.world.animals {
-            animal.position += animal.rotation * na::Vector2::new(0.0, animal.speed);
+            for food in &mut self.world.foods {
+                let distance = na::distance(&animal.position, &food.position);
 
-            animal.position.x = na::wrap(animal.position.x, 0.0, 1.0);
-            animal.position.y = na::wrap(animal.position.y, 0.0, 1.0);
+                if distance <= self.config.food_size {
+                    animal.satiation += 1;
+                    food.position = rng.gen();
+                }
+            }
+        }
+    }
+
+    fn process_brains(&mut self) {
+        for animal in &mut self.world.animals {
+            animal.process_brain(&self.config, &self.world.foods);
+        }
+    }
+
+    fn process_movements(&mut self) {
+        for animal in &mut self.world.animals {
+            animal.process_movement();
+        }
+    }
+
+    fn try_evolving(&mut self, rng: &mut dyn RngCore) -> Option<Statistics> {
+        self.age += 1;
+
+        if self.age > self.config.sim_generation_length {
+            Some(self.evolve(rng))
+        } else {
+            None
+        }
+    }
+
+    fn evolve(&mut self, rng: &mut dyn RngCore) -> Statistics {
+        self.age = 0;
+        self.generation += 1;
+
+        let mut individuals: Vec<_> = self
+            .world
+            .animals
+            .iter()
+            .map(AnimalIndividual::from_animal)
+            .collect();
+
+        if self.config.ga_reverse == 1 {
+            let max_satiation = self
+                .world
+                .animals
+                .iter()
+                .map(|animal| animal.satiation)
+                .max()
+                .unwrap_or_default();
+
+            for individual in &mut individuals {
+                individual.fitness = (max_satiation as f32) - individual.fitness;
+            }
+        }
+
+        let ga = ga::GeneticAlgorithm::new(
+            ga::RouletteWheelSelection,
+            ga::UniformCrossover,
+            ga::GaussianMutation::new(self.config.ga_mut_chance, self.config.ga_mut_coeff),
+        );
+
+        let (individuals, statistics) = ga.evolve(rng, &individuals);
+
+        self.world.animals = individuals
+            .into_iter()
+            .map(|i| i.into_animal(&self.config, rng))
+            .collect();
+
+        for food in &mut self.world.foods {
+            food.position = rng.gen();
+        }
+
+        Statistics {
+            generation: self.generation - 1,
+            ga: statistics,
         }
     }
 }
 
-// --
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
 
-#[derive(Debug)]
-pub struct World {
-    animals: Vec<Animal>,
-    foods: Vec<Food>,
-}
+    #[test]
+    #[ignore]
+    fn test() {
+        let mut rng = ChaCha8Rng::from_seed(Default::default());
+        let mut sim = Simulation::random(Default::default(), &mut rng);
 
-impl World {
-    pub fn random(rng: &mut dyn RngCore) -> Self {
-        let animals = (0..40).map(|_| Animal::random(rng)).collect();
+        let avg_fitness = (0..10)
+            .map(|_| sim.train(&mut rng).ga.avg_fitness())
+            .sum::<f32>()
+            / 10.0;
 
-        let foods = (0..60).map(|_| Food::random(rng)).collect();
-
-        // ^ Our algorithm allows for animals and foods to overlap, so
-        // | it's hardly ideal - but good enough for our purposes.
-        // |
-        // | A more complex solution could be based off of e.g.
-        // | Poisson disk sampling:
-        // |
-        // | https://en.wikipedia.org/wiki/Supersampling
-        // ---
-
-        Self { animals, foods }
-    }
-
-    pub fn animals(&self) -> &[Animal] {
-        &self.animals
-    }
-
-    pub fn foods(&self) -> &[Food] {
-        &self.foods
-    }
-}
-
-// --
-
-#[derive(Debug)]
-pub struct Animal {
-    position: na::Point2<f32>,
-    rotation: na::Rotation2<f32>,
-    speed: f32,
-}
-
-impl Animal {
-    pub fn random(rng: &mut dyn RngCore) -> Self {
-        Self {
-            position: rng.gen(),
-            // ------ ^-------^
-            // | If not for `rand-no-std`, we'd have to do awkward
-            // | `na::Point2::new(rng.gen(), rng.gen())` instead
-            // ---
-            rotation: rng.gen(),
-            speed: 0.002,
-        }
-    }
-
-    pub fn position(&self) -> na::Point2<f32> {
-        // ------------------ ^
-        // | No need to return a reference, because na::Point2 is Copy.
-        // |
-        // | (meaning: it's so small that cloning it is cheaper than
-        // | messing with references.)
-        // |
-        // | Of course you don't have to memorize which types are Copy
-        // | and which aren't - if you accidentally return a reference
-        // | to a type that's Copy, rust-clippy will point it out and
-        // | suggest a change.
-        // ---
-
-        self.position
-    }
-
-    pub fn rotation(&self) -> na::Rotation2<f32> {
-        self.rotation
-    }
-
-    pub fn speed(&self) -> f32 {
-        self.speed
-    }
-}
-
-// --
-
-#[derive(Debug)]
-pub struct Food {
-    position: na::Point2<f32>,
-}
-
-impl Food {
-    pub fn random(rng: &mut dyn RngCore) -> Self {
-        Self {
-            position: rng.gen(),
-        }
-    }
-
-    pub fn position(&self) -> na::Point2<f32> {
-        self.position
+        approx::assert_relative_eq!(31.944998, avg_fitness);
     }
 }

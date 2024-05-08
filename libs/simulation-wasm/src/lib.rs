@@ -1,3 +1,10 @@
+mod animal;
+mod food;
+mod world;
+
+pub use self::animal::*;
+pub use self::food::*;
+pub use self::world::*;
 use lib_simulation as sim;
 use rand::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -11,55 +18,32 @@ pub struct Simulation {
 #[wasm_bindgen]
 impl Simulation {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
+    pub fn new(config: JsValue) -> Self {
+        let config: sim::Config = serde_wasm_bindgen::from_value(config).unwrap();
         let mut rng = thread_rng();
-        let sim = sim::Simulation::random(&mut rng);
+        let sim = sim::Simulation::random(config, &mut rng);
 
         Self { rng, sim }
+    }
+
+    pub fn default_config() -> JsValue {
+        let config = &sim::Config::default();
+        serde_wasm_bindgen::to_value(config).unwrap()
+    }
+
+    pub fn config(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(self.sim.config()).unwrap()
     }
 
     pub fn world(&self) -> World {
         World::from(self.sim.world())
     }
 
-    pub fn step(&mut self) {
-        self.sim.step();
+    pub fn step(&mut self) -> Option<String> {
+        self.sim.step(&mut self.rng).map(|stats| stats.to_string())
     }
-}
 
-// --
-
-impl From<&sim::World> for World {
-    fn from(world: &sim::World) -> Self {
-        let animals = world.animals().iter().map(Animal::from).collect();
-
-        Self { animals }
+    pub fn train(&mut self) -> String {
+        self.sim.train(&mut self.rng).to_string()
     }
-}
-
-impl From<&sim::Animal> for Animal {
-    fn from(animal: &sim::Animal) -> Self {
-        Self {
-            x: animal.position().x,
-            y: animal.position().y,
-            rotation: animal.rotation().angle(),
-        }
-    }
-}
-
-// --
-
-#[wasm_bindgen]
-#[derive(Clone, Debug)]
-pub struct World {
-    #[wasm_bindgen(getter_with_clone)]
-    pub animals: Vec<Animal>,
-}
-
-#[wasm_bindgen]
-#[derive(Clone, Debug)]
-pub struct Animal {
-    pub x: f32,
-    pub y: f32,
-    pub rotation: f32,
 }

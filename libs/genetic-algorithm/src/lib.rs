@@ -3,12 +3,14 @@ mod crossover;
 mod individual;
 mod mutation;
 mod selection;
+mod statistics;
 
 pub use self::chromosome::*;
 pub use self::crossover::*;
 pub use self::individual::*;
 pub use self::mutation::*;
 pub use self::selection::*;
+pub use self::statistics::*;
 use rand::seq::SliceRandom;
 use rand::{Rng, RngCore};
 
@@ -34,24 +36,26 @@ where
         }
     }
 
-    pub fn evolve<I>(&self, rng: &mut dyn RngCore, population: &[I]) -> Vec<I>
+    pub fn evolve<I>(&self, rng: &mut dyn RngCore, population: &[I]) -> (Vec<I>, Statistics)
     where
         I: Individual,
     {
         assert!(!population.is_empty());
 
-        (0..population.len())
+        let new_population = (0..population.len())
             .map(|_| {
-                let parent_a: &Chromosome =
-                    self.selection_method.select(rng, population).chromosome();
-                let parent_b: &Chromosome =
-                    self.selection_method.select(rng, population).chromosome();
-                let mut child: Chromosome =
-                    self.crossover_method.crossover(rng, parent_a, parent_b);
+                let parent_a = self.selection_method.select(rng, population).chromosome();
+                let parent_b = self.selection_method.select(rng, population).chromosome();
+
+                let mut child = self.crossover_method.crossover(rng, parent_a, parent_b);
+
                 self.mutation_method.mutate(rng, &mut child);
+
                 I::create(child)
             })
-            .collect()
+            .collect();
+
+        (new_population, Statistics::new(population))
     }
 }
 
@@ -86,7 +90,7 @@ mod tests {
         ];
 
         for _ in 0..10 {
-            population = genetic_algorithm.evolve(&mut rng, &population);
+            population = genetic_algorithm.evolve(&mut rng, &population).0;
         }
 
         let expected_population = vec![

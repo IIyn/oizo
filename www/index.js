@@ -1,59 +1,83 @@
 import * as sim from "lib-simulation-wasm";
+import { Viewport } from "./app/viewport";
 
-CanvasRenderingContext2D.prototype.drawTriangle = function (
-  x,
-  y,
-  size,
-  rotation
-) {
-  this.beginPath();
+const viewport = new Viewport(document.getElementById("viewport"));
 
-  this.moveTo(
-    x - Math.sin(rotation) * size * 1.5,
-    y + Math.cos(rotation) * size * 1.5
-  );
+let config = sim.Simulation.default_config();
+console.log(config);
 
-  this.lineTo(
-    x - Math.sin(rotation + (2.0 / 3.0) * Math.PI) * size,
-    y + Math.cos(rotation + (2.0 / 3.0) * Math.PI) * size
-  );
+/**
+ * Current simulation.
+ *
+ * @type {Simulation}
+ */
+let simulation = new sim.Simulation(config);
 
-  this.lineTo(
-    x - Math.sin(rotation + (4.0 / 3.0) * Math.PI) * size,
-    y + Math.cos(rotation + (4.0 / 3.0) * Math.PI) * size
-  );
+/**
+ * Whether the simulation is working or not.
+ * Can be modified by the `pause` command.
+ *
+ * @type {boolean}
+ */
+let active = true;
 
-  this.lineTo(
-    x - Math.sin(rotation) * size * 1.5,
-    y + Math.cos(rotation) * size * 1.5
-  );
-
-  this.stroke();
-};
-
-const simulation = new sim.Simulation();
-const viewport = document.getElementById("viewport");
-const viewportWidth = viewport.width;
-const viewportHeight = viewport.height;
-
-const viewportScale = window.devicePixelRatio || 1;
-viewport.width = viewportWidth * viewportScale;
-viewport.height = viewportHeight * viewportScale;
-
-const context = viewport.getContext("2d");
-context.scale(viewportScale, viewportScale);
+/* ---------- */
 
 function redraw() {
-  context.clearRect(0, 0, viewport.width, viewport.height);
-  simulation.step();
-  for (const animal of simulation.world().animals) {
-    context.drawTriangle(
-      animal.x * viewportWidth,
-      animal.y * viewportHeight,
-      0.01 * viewportWidth,
-      animal.rotation
+  if (active) {
+    const stats = simulation.step();
+
+    if (stats) {
+      terminal.println(stats);
+    }
+  }
+
+  const config = simulation.config();
+  const world = simulation.world();
+
+  viewport.clear();
+
+  for (const food of world.foods) {
+    viewport.drawCircle(
+      food.x,
+      food.y,
+      config.food_size / 2.0,
+      "rgb(0, 255, 128)"
     );
   }
+
+  for (const animal of world.animals) {
+    viewport.drawTriangle(
+      animal.x,
+      animal.y,
+      config.food_size,
+      animal.rotation,
+      "rgb(255, 255, 255)"
+    );
+
+    const anglePerCell = config.eye_fov_angle / config.eye_cells;
+
+    for (let cellId = 0; cellId < config.eye_cells; cellId += 1) {
+      const angleFrom =
+        animal.rotation -
+        config.eye_fov_angle / 2.0 +
+        cellId * anglePerCell +
+        Math.PI / 2.0;
+
+      const angleTo = angleFrom + anglePerCell;
+      const energy = animal.vision[cellId];
+
+      viewport.drawArc(
+        animal.x,
+        animal.y,
+        config.food_size * 2.5,
+        angleFrom,
+        angleTo,
+        `rgba(0, 255, 128, ${energy})`
+      );
+    }
+  }
+
   requestAnimationFrame(redraw);
 }
 

@@ -3,33 +3,21 @@ import { Viewport } from "./app/viewport";
 
 const viewport = new Viewport(document.getElementById("viewport"));
 
-let config = sim.Simulation.default_config();
-console.log(config);
-
 /**
  * Current simulation.
  *
  * @type {Simulation}
  */
-let simulation = new sim.Simulation(config);
-
-/**
- * Whether the simulation is working or not.
- * Can be modified by the `pause` command.
- *
- * @type {boolean}
- */
-let active = true;
+let simulation = new sim.Simulation(sim.Simulation.default_config());
 
 /* ---------- */
 
 function redraw() {
-  if (active) {
-    const stats = simulation.step();
+  const stats = simulation.step();
 
-    if (stats) {
-      terminal.println(stats);
-    }
+  if (stats) {
+    const train = document.getElementById("train");
+    train.textContent = stats;
   }
 
   const config = simulation.config();

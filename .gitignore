@@ -1,4 +1,4 @@
-# target
 target/
+www/node_modules
 
 .DS_Store

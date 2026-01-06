@@ -1,3 +1,5 @@
+use rand::seq::IndexedRandom;
+
 use crate::*;
 
 #[derive(Clone, Debug, Default)]

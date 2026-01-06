@@ -20,7 +20,7 @@ impl Simulation {
     #[wasm_bindgen(constructor)]
     pub fn new(config: JsValue) -> Self {
         let config: sim::Config = serde_wasm_bindgen::from_value(config).unwrap();
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let sim = sim::Simulation::random(config, &mut rng);
 
         Self { rng, sim }

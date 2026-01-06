@@ -71,7 +71,7 @@ impl Simulation {
 
                 if distance <= self.config.food_size {
                     animal.satiation += 1;
-                    food.position = rng.gen();
+                    food.position = rng.random();
                 }
             }
         }
@@ -138,7 +138,7 @@ impl Simulation {
             .collect();
 
         for food in &mut self.world.foods {
-            food.position = rng.gen();
+            food.position = rng.random();
         }
 
         Statistics {

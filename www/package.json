@@ -1,21 +1,27 @@
 {
-  "name": "oizo",
-  "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "1.0.0",
+  "description": "My webpack project",
+  "name": "webpack-project",
   "scripts": {
-    "build": "webpack --config webpack.config.js",
-    "start": "webpack-dev-server",
-    "older": "NODE_OPTIONS=--openssl-legacy-provider npm run start",
-    "older-build": "NODE_OPTIONS=--openssl-legacy-provider npm run build"
+    "build": "webpack --mode=production --node-env=production",
+    "build:dev": "webpack --mode=development",
+    "serve": "webpack serve",
+    "watch": "webpack --watch"
   },
   "dependencies": {
     "lib-simulation-wasm": "file:../libs/simulation-wasm/pkg"
   },
   "devDependencies": {
-    "webpack": "^5.76.3",
-    "webpack-cli": "^5.0.1",
-    "webpack-dev-server": "^4.13.1",
-    "copy-webpack-plugin": "^5.0.0"
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.5",
+    "mini-css-extract-plugin": "^2.9.4",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
   }
 }

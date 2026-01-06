@@ -8,7 +8,7 @@ pub struct Food {
 impl Food {
     pub fn random(rng: &mut dyn RngCore) -> Self {
         Self {
-            position: rng.gen(),
+            position: rng.random(),
         }
     }
 

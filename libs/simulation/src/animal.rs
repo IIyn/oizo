@@ -65,8 +65,8 @@ impl Animal {
 impl Animal {
     fn new(config: &Config, rng: &mut dyn RngCore, brain: Brain) -> Self {
         Self {
-            position: rng.gen(),
-            rotation: rng.gen(),
+            position: rng.random(),
+            rotation: rng.random(),
             vision: vec![0.0; config.eye_cells],
             speed: config.sim_speed_max,
             eye: Eye::new(config),

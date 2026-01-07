@@ -12,10 +12,12 @@ const stylesHandler = isProduction ? MiniCssExtractPlugin.loader : 'style-loader
 
 
 const config = {
-    entry: './src/index.js',
+    entry: "./bootstrap.js",
     output: {
         path: path.resolve(__dirname, 'dist'),
+        filename: "./bootstrap.js"
     },
+    mode: "development",
     devServer: {
         open: true,
         host: 'localhost',
@@ -39,13 +41,13 @@ const config = {
             },
             {
                 test: /\.css$/i,
-                use: [stylesHandler,'css-loader'],
+                use: [stylesHandler, 'css-loader'],
             },
             {
                 test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
                 type: 'asset',
             },
-            
+
             {
                 test: /\.html$/i,
                 use: ['html-loader'],
@@ -60,10 +62,10 @@ const config = {
 module.exports = () => {
     if (isProduction) {
         config.mode = 'production';
-        
+
         config.plugins.push(new MiniCssExtractPlugin());
-        
-        
+
+
     } else {
         config.mode = 'development';
     }

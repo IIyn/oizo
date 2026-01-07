@@ -11,7 +11,6 @@ pub use self::individual::*;
 pub use self::mutation::*;
 pub use self::selection::*;
 pub use self::statistics::*;
-use rand::seq::SliceRandom;
 use rand::{Rng, RngCore};
 
 pub struct GeneticAlgorithm<S> {

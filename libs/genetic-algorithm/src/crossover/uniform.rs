@@ -17,7 +17,7 @@ impl CrossoverMethod for UniformCrossover {
 
         parent_a
             .zip(parent_b)
-            .map(|(a, b)| if rng.gen_bool(0.5) { a } else { b })
+            .map(|(a, b)| if rng.random_bool(0.5) { a } else { b })
             .collect()
     }
 }

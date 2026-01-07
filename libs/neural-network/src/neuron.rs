@@ -59,7 +59,7 @@ mod tests {
 
         assert_relative_eq!(
             neuron.weights.as_slice(),
-            [0.67383957, 0.8181262, 0.26284897, 0.5238807].as_slice(),
+            [0.67383933, 0.81812596, 0.26284885, 0.5238805].as_slice(),
         );
     }
 

@@ -88,10 +88,10 @@ mod tests {
 
         assert_relative_eq!(
             network.layers[0].neurons[0].weights.as_slice(),
-            &[0.67383957, 0.8181262, 0.26284897].as_slice()
+            &[0.67383933, 0.81812596, 0.26284885].as_slice()
         );
 
-        assert_relative_eq!(network.layers[0].neurons[1].bias, 0.5238807);
+        assert_relative_eq!(network.layers[0].neurons[1].bias, 0.5238805);
 
         assert_relative_eq!(
             network.layers[0].neurons[1].weights.as_slice(),

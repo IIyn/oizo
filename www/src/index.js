@@ -1,4 +1,5 @@
 import * as sim from "lib-simulation-wasm";
+import "../index.css";
 import { Viewport } from "./app/viewport";
 
 const viewport = new Viewport(document.getElementById("viewport"));

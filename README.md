@@ -8,9 +8,29 @@ You will need to have rust installed on your computer. You can install it by fol
 
 Then, you can clone the repository and run the following command to start the simulation:
 
+## How to run the project :
+
+Install wasm-pack
 ```bash
- cargo install wasm-pack
- cargo build
- cd libs/simulation-wasm && wasm-pack build
- cd ../../www && npm install && npm run serve
+    make install-wp 
+```
+
+Build rust libraries
+```bash
+    make build
+```
+
+Build the webAssembly binaries
+```bash
+    make build-wasm
+```
+
+Install npm packages
+```bash
+    make install
+```
+
+Run the project
+```bash
+    make run
 ```
